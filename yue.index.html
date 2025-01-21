@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>粤语猜词</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f4f4f9;
+        }
+        .game-container {
+            text-align: center;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .word-display {
+            font-size: 2em;
+            margin-bottom: 20px;
+        }
+        .buttons {
+            margin-top: 20px;
+        }
+        button {
+            margin: 5px;
+            padding: 10px 20px;
+            font-size: 1em;
+            cursor: pointer;
+        }
+        .timer {
+            font-size: 1.5em;
+            margin-top: 20px;
+        }
+        .result {
+            font-size: 1.2em;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="word-display" id="wordDisplay"></div>
+        <div class="buttons">
+            <button onclick="answerCorrect()">答对</button>
+            <button onclick="nextWord()">下一个</button>
+            <button onclick="restartGame()">重新开始</button>
+        </div>
+        <div class="timer" id="timer">180</div>
+        <div class="result" id="result"></div>
+        <div id="correctCount" class="result"></div>
+    </div>
+
+    <script>
+        const wordList = [
+            "神奇动物", "人间不值得", "花式作死", "生命在于静止", "我太难了",
+            "雨女无瓜", "皮一下很开心", "拿来主义", "双击666", "真香警告",
+            "打工人自救指南", "社畜生存法则", "人均百万富翁", "表情包大战",
+            "干饭人，干饭魂", "睡前原谅一切", "好好学习，天天向上", "真的绝了",
+            "大家都是成年人", "一言不合就", "人生苦短，及时行乐", "世界那么大，我想去",
+            "你品，你细品", "这不是针对谁", "有内味了", "不讲武德", "十动然拒",
+            "人在桥上，影在水中", "你永远不知道自己有多强大，直到有一天你需要的时候",
+            "万物皆可", "我愿称之为", "请收下我的膝盖", "一不小心就", "佛系青年",
+            "丧到不行", "吃老本", "硬核操作", "云淡风轻", "隔壁老王", "真的急哭了",
+            "点赞之交", "人均戏精", "真的笑skr", "绝对零度", "人间真实", "一键三连",
+            "梦幻联动", "真的绷不住", "人均大佬", "人生如戏，全靠演技", "画龙点睛",
+            "百折不挠", "拔苗助长", "守株待兔", "破釜沉舟", "一箭双雕", "亡羊补牢",
+            "杯弓蛇影", "掩耳盗铃", "骑虎难下", "刻舟求剑", "投笔从戎", "精卫填海",
+            "望梅止渴", "卧薪尝胆", "悬梁刺股", "草木皆兵", "闻鸡起舞", "纸上谈兵",
+            "三顾茅庐", "买椟还珠", "郑人买履", "叶公好龙", "愚公移山", "塞翁失马",
+            "井底之蛙", "画蛇添足", "对牛弹琴", "乐不思蜀", "指鹿为马", "八仙过海",
+            "四面楚歌", "朝三暮四", "九牛二虎之力", "一石二鸟", "一日看尽长安花",
+            "以卵击石", "有志竟成", "不欺暗室", "三生幸", "五湖四海", "七上八下",
+            "九牛二虎", "万无一失", "一丝不苟", "举世闻名", "与虎谋皮", "百般无奈",
+            "丧家之犬", "金碧辉煌", "夜曲", "青花瓷", "七里香", "星晴", "稻香", "花火",
+            "晴天", "海阔天空", "同桌的你", "校园民谣", "最浪漫的事", "小幸运",
+            "勇敢的心", "你的酒馆对我打了烊", "成全", "体面", "忍者", "幸运咖",
+            "光年之外", "说谎", "爱情转移", "寻", "让我留在你身边", "演员", "红玫瑰",
+            "白月光", "前任情人", "你是我一生最爱的宝", "我愿意", "三星", "微软",
+            "谷歌", "亚马逊", "脸书", "丰田", "宝马", "奔驰", "耐克", "阿迪达斯",
+            "可口可乐", "百事", "麦当劳", "肯德基", "路易威登", "古驰", "香奈儿",
+            "爱马仕", "劳力士", "斯沃琪", 
+            '吃瓜群众', '暴走漫画', '自拍杆', '速食面', '复仇者联盟', '小苹果', '滴滴打车', '爱奇艺', '千与千寻', '霸王别姬',
+            '朋友圈', '酷狗音乐', '淘宝网', '跑步机', '王思聪', '快递员', '小红书', '网红直播', '电商平台', '吐槽大会',
+            '王者荣耀', '双十一', '假期旅行', '青春有你', '嘻哈包袱铺', '单身狗', '健身房', '深夜食堂', '遇见', '王子文',
+            '远大前程', '逆战', '骨头汤', '这个杀手不太冷', '鬼吹灯', '风暴眼', '我是歌手', '千年女优', '变形金刚', '梦幻西游',
+            '脱口秀大会', '消失的爱人', '王者之心', '阿甘正传', '小幸运', '一口气', '朋友的选择', '低头族', '沙漠骆驼', '小鲜肉',
+            '男神女神', '民国风', '中国好声音', '金刚狼', '精英律师', '权力的游戏', '青蛇', '时光机', '泰囧', '星辰大海',
+            '跳舞机', '麦当劳', '可口可乐', '芒果台', '360搜索', '凤凰传奇', '北京烤鸭', '口碑影院', '王老吉', '龙虾',
+            '追风筝的人', '互联网金融', '极限挑战', '不见不散', '平安银行', '深圳发展', '大闹天宫', '奶茶店', '丝滑奶油', '梦幻沙滩',
+            '好奇心日报', '明日之子', '综艺节目', '轻奢品牌', '办公小野', '人生如戏', '海底总动员', '时尚潮流', '相声小品', '小甜甜',
+            '亮剑', '无人机', '老公去哪儿', '绿色出行', '大闹天竺', '春晚小品', '天气预报', '纸牌屋', '神雕侠侣', '晴天',
+            '李白', '酒吧文化', '红烧肉', '奇葩说', '我爱我家', '蓝色大门', '暖心文案', '鱼香茄子', '打卡地', '线上教育',
+            '时光倒流', '星光大道', '胡歌', '黑帮电影', '靠谱', '小心烫手', '春天花会开', '火锅', '翻墙', '云南白药', '互联网公司',
+            '百事可乐', '麻辣烫', '喜剧之王', '大话西游', '高富帅', '白雪公主', '吃货', '网络直播', '游戏玩家', '外卖',
+            '假装情侣', '小龙虾', '蒜蓉粉丝', '天台爱情', '最佳前任', '速冻食品', '零食盒子', '刷脸支付', '街头霸王', '流星花园',
+            '伪装者', '热干面', '胡椒炒蛋', '粤语歌', '偶像剧', '霓虹灯', '华语金曲', '喜马拉雅', '漫威电影', '橙色天空',
+            '凉凉', '慢摇', '冰雪奇缘', '开心麻花', '杨贵妃', '巅峰对决', '不忘初心', '一见钟情', '超能陆战队', '神秘家族',
+            '喵星人', '搞笑一家人', '吃面条', '超级英雄', '梦想成真', '一起跑', '摇滚乐', '帅哥美女', '心灵鸡汤', '星际迷航',
+            '绝命毒师', '追忆似水年华', '超级马里奥', '探险家', '爱情公寓', '少年派', '奇迹男孩', '柯南', '亲爱的热爱的', '动物世界',
+            '跑男', '奇异博士', '亮丽人生', '奔跑吧', '飞跃地平线', '沉默的羔羊', '午夜凶铃', '时间管理', '撕裂人', '魔术师',
+            '间谍', '漫长的告别', '危险人物', '偷窥', '勇者无畏', '火星救援', '满天星', '无间道', '致命ID', '黎明时分',
+            '行动代码', '你的名字', '海王', '蜘蛛侠', '疾速追杀', '全职高手', '红色警戒', '黑豹', '刀剑神域', '大侦探福尔摩斯',
+            '碟中谍', '源代码', '无敌破坏王', '银魂', '电锯惊魂', '无声的证言', '刀锋战士', '猛禽小队', '探案', '这就是街舞',
+            '一刀未剪', '特工', '雪暴', '龙之谷', '阿修罗', '冰与火', '冒险游戏', '迷失', '刑警', '微笑', '光明会', '阿拉丁'
+        ];
+
+        let currentWordIndex = -1;
+        let currentTime = 180; // Timer starting value in seconds
+        let timerInterval;
+        let correctCount = 0; // To keep track of correct answers
+
+        function startGame() {
+            currentTime = 180;
+            correctCount = 0; // Reset correct count at the start of the game
+            currentWordIndex = Math.floor(Math.random() * wordList.length);
+            updateWord();
+            updateTimer();
+            document.getElementById("result").innerText = "";
+            document.getElementById("correctCount").innerText = "";
+            timerInterval = setInterval(updateTimer, 1000);
+        }
+
+        function updateWord() {
+            document.getElementById("wordDisplay").innerText = wordList[currentWordIndex];
+        }
+
+        function updateTimer() {
+            document.getElementById("timer").innerText = currentTime;
+            if (currentTime <= 0) {
+                clearInterval(timerInterval);
+                document.getElementById("result").innerText = "时间到！游戏结束！";
+                document.getElementById("correctCount").innerText = "答对了 " + correctCount + " 次！"; // Display the correct count when time is up
+            }
+            currentTime--;
+        }
+
+        function answerCorrect() {
+            correctCount++; // Increase correct count on each correct answer
+            document.getElementById("result").innerText = "答对了！";
+            nextWord();
+        }
+
+        function nextWord() {
+            currentWordIndex = Math.floor(Math.random() * wordList.length);
+            updateWord();
+        }
+
+        function restartGame() {
+            clearInterval(timerInterval);
+            startGame();
+        }
+
+        startGame();
+    </script>
+</body>
+</html>
